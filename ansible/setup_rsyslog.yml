@@ -1,0 +1,28 @@
+- name: Configure rsyslog on Raspberry Pis
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Install rsyslog
+      apt:
+        name: rsyslog
+        state: present
+        update_cache: yes
+
+    - name: Add ub1 to /etc/hosts on Raspberry Pis
+      lineinfile:
+        path: /etc/hosts
+        line: "192.168.86.22  ub1"
+        state: present
+
+    - name: Configure rsyslog to forward logs to ub1
+      lineinfile:
+        path: /etc/rsyslog.conf
+        line: "*.* @@ub1:1514"
+        state: present
+
+    - name: Restart rsyslog
+      systemd:
+        name: rsyslog
+        state: restarted
+        enabled: yes

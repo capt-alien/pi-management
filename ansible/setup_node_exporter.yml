@@ -1,0 +1,78 @@
+---
+- name: Install and Configure Node Exporter
+  hosts: all
+  become: true
+  tasks:
+    - name: Set Node Exporter version
+      set_fact:
+        node_exporter_version: "1.9.0"
+
+    - name: Set Node Exporter URL (Hardcoded)
+      set_fact:
+        node_exporter_url: >-
+          {% if inventory_hostname == "ub1" %}
+            https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-amd64.tar.gz
+          {% else %}
+            https://github.com/prometheus/node_exporter/releases/download/v1.9.0/node_exporter-1.9.0.linux-armv7.tar.gz
+          {% endif %}
+
+    - name: Download Node Exporter
+      get_url:
+        url: "{{ node_exporter_url }}"
+        dest: "/tmp/node_exporter.tar.gz"
+
+    - name: Extract Node Exporter
+      ansible.builtin.unarchive:
+        src: "/tmp/node_exporter.tar.gz"
+        dest: "/usr/local/bin/"
+        remote_src: yes
+        extra_opts: [--strip-components=1]
+
+    - name: Create Node Exporter user
+      user:
+        name: node_exporter
+        shell: /usr/sbin/nologin
+        system: true
+
+    - name: Create systemd service file for Node Exporter
+      copy:
+        dest: "/etc/systemd/system/node_exporter.service"
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+
+          [Service]
+          User=node_exporter
+          ExecStart=/usr/local/bin/node_exporter
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+      notify: Restart node_exporter
+
+    - name: Reload systemd
+      systemd:
+        daemon_reload: yes
+
+    - name: Enable and start Node Exporter service
+      systemd:
+        name: node_exporter
+        enabled: yes
+        state: started
+
+    - name: Install UFW if not present
+      package:
+        name: ufw
+        state: present
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: Allow Node Exporter port in UFW (if applicable)
+      command: ufw allow 9100/tcp
+      when: ansible_facts['os_family'] == "Debian" and ansible_facts['pkg_mgr'] == "apt"
+  
+  handlers:
+    - name: Restart node_exporter
+      systemd:
+        name: node_exporter
+        state: restarted

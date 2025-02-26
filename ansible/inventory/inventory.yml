@@ -1,0 +1,12 @@
+all:
+  hosts:
+    rp1:
+      ansible_host: 192.168.86.80
+    rp2:
+      ansible_host: 192.168.86.67
+    rp3:
+      ansible_host: 192.168.86.73
+    rp4:
+      ansible_host: 192.168.86.26
+  vars:
+    ansible_user: alien
