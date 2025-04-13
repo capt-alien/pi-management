@@ -1,0 +1,21 @@
+- name: Join Raspberry Pi nodes to k3s cluster
+  hosts: raspberry_pis
+  become: true
+  vars_files:
+    - group_vars/all.yml
+  tasks:
+    - name: Skip HomeKit Pi (rp4)
+      meta: end_host
+      when: inventory_hostname == "rp4"
+
+    - name: Install k3s agent
+      shell: |
+        curl -sfL https://get.k3s.io | K3S_URL=https://{{ master_ip }}:6443 K3S_TOKEN={{ k3s_token }} sh -
+      args:
+        executable: /bin/bash
+
+    - name: Confirm node joined
+      wait_for:
+        port: 6443
+        host: "{{ master_ip }}"
+        timeout: 60

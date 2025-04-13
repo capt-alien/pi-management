@@ -1,0 +1,11 @@
+# group_vars/all.yml
+
+# SSH settings
+ansible_user: ansible
+ansible_ssh_private_key_file: ~/.ssh/ansible_key
+ansible_become: true
+ansible_become_method: sudo
+
+# Kubernetes master details
+master_ip: 192.168.86.74
+k3s_token: "K10876abc140a77da43069d5545cc2bfcf5981e12b1edf88ff497b718cd83eb25a8::server:656f95fd33b3193efe3e2771692eeb1b"

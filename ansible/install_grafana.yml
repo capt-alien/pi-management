@@ -1,0 +1,52 @@
+---
+- name: Install and Configure Grafana on Ubuntu
+  hosts: ub1
+  become: yes
+  tasks:
+
+    - name: Install dependencies
+      apt:
+        name:
+          - software-properties-common
+          - apt-transport-https
+          - wget
+        state: present
+        update_cache: yes
+
+    - name: Add Grafana GPG key
+      ansible.builtin.shell: wget -q -O - https://packages.grafana.com/gpg.key | tee /etc/apt/trusted.gpg.d/grafana.asc
+
+    - name: Add Grafana APT repository
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/grafana.list
+        content: "deb https://packages.grafana.com/oss/deb stable main"
+
+    - name: Install Grafana
+      apt:
+        name: grafana
+        state: present
+        update_cache: yes
+
+
+    - name: Enable and start Grafana service
+      systemd:
+        name: grafana-server
+        enabled: yes
+        state: started
+
+    - name: Allow Grafana through UFW (if enabled)
+      ufw:
+        rule: allow
+        port: "3000"
+        proto: tcp
+
+    - name: Install Grafana plugins (Optional)
+      command: grafana-cli plugins install grafana-piechart-panel
+      notify: Restart Grafana
+
+
+  handlers:
+    - name: Restart Grafana
+      systemd:
+        name: grafana-server
+        state: restarted

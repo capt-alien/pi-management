@@ -1,0 +1,17 @@
+- name: Enable memory cgroups for k3s on Raspberry Pis
+  hosts: raspberry_pis
+  become: true
+  tasks:
+    - name: Ensure cgroup memory and enable flags are present in /boot/cmdline.txt
+      lineinfile:
+        path: /boot/cmdline.txt
+        regexp: '^(.*)$'
+        line: '\1 cgroup_memory=1 cgroup_enable=memory'
+        backrefs: yes
+
+    - name: Reboot Pis to apply cgroup changes
+      reboot:
+        msg: "Rebooting to apply cgroup memory settings for k3s"
+        pre_reboot_delay: 3
+        post_reboot_delay: 10
+        reboot_timeout: 300
