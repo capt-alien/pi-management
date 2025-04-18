@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: trudesk
+  namespace: trudesk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: trudesk
+  template:
+    metadata:
+      labels:
+        app: trudesk
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: rp3
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: trudesk
+          image: ghcr.io/capt-alien/trudesk-arm:latest
+          command: ["/bin/sh"]
+          args:
+            - -c
+            - >
+              MONGODB_URI='mongodb://mongo:27017/trudesk' node app.js
+          ports:
+            - containerPort: 8118
+          env:
+            - name: NODE_ENV
+              value: production
+          volumeMounts:
+            - mountPath: /trudesk/upload
+              name: upload-data
+      volumes:
+        - name: upload-data
+          persistentVolumeClaim:
+            claimName: trudesk-pvc
