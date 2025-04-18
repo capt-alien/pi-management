@@ -1,0 +1,6 @@
+- name: Restore FreeScout and MariaDB from preserved PVCs
+  hosts: localhost
+  gather_facts: false
+
+  roles:
+    - role: freescout

@@ -1,0 +1,36 @@
+- name: Create FreeScout namespace
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ freescout_namespace }}"
+    state: present
+
+- name: Deploy FreeScout PVC
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'freescout-pvc.yaml.j2') }}"
+
+- name: Deploy MariaDB PVC
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'mariadb-pvc.yaml.j2') }}"
+
+- name: Deploy MariaDB
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'mariadb-deployment.yaml.j2') }}"
+
+- name: Expose MariaDB service
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'mariadb-service.yaml.j2') }}"
+
+- name: Deploy FreeScout
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'freescout-deployment.yaml.j2') }}"
+
+- name: Expose FreeScout service
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'freescout-service.yaml.j2') }}"

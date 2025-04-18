@@ -1,0 +1,7 @@
+- name: Deploy FreeScout and MariaDB to K8s
+  hosts: localhost
+  gather_facts: false
+  connection: local
+
+  roles:
+    - freescout

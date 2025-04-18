@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freescout
+  namespace: {{ freescout_namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: freescout
+  template:
+    metadata:
+      labels:
+        app: freescout
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ freescout_node }}
+      containers:
+        - name: freescout
+          image: tiredofit/freescout:latest
+          ports:
+            - containerPort: {{ freescout_port }}
+          env:
+            - name: DB_HOST
+              value: mariadb.{{ freescout_namespace }}.svc.cluster.local
+            - name: DB_NAME
+              value: {{ mariadb_db }}
+            - name: DB_USER
+              value: {{ mariadb_user }}
+            - name: DB_PASS
+              value: {{ mariadb_password }}
+          volumeMounts:
+            - mountPath: /data
+              name: freescout-data
+      volumes:
+        - name: freescout-data
+          persistentVolumeClaim:
+            claimName: freescout-pvc

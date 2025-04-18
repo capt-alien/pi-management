@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mariadb
+  namespace: {{ freescout_namespace }}
+spec:
+  ports:
+    - port: {{ mariadb_port }}
+      targetPort: {{ mariadb_port }}
+  selector:
+    app: mariadb

@@ -1,0 +1,33 @@
+- name: Tear down FreeScout and MariaDB (PVCs survive)
+  hosts: localhost
+  gather_facts: false
+  vars:
+    ns: freescout
+  tasks:
+    - name: Delete FreeScout deployment
+      kubernetes.core.k8s:
+        state: absent
+        kind: Deployment
+        namespace: "{{ ns }}"
+        name: freescout
+
+    - name: Delete FreeScout service
+      kubernetes.core.k8s:
+        state: absent
+        kind: Service
+        namespace: "{{ ns }}"
+        name: freescout
+
+    - name: Delete MariaDB deployment
+      kubernetes.core.k8s:
+        state: absent
+        kind: Deployment
+        namespace: "{{ ns }}"
+        name: mariadb
+
+    - name: Delete MariaDB service
+      kubernetes.core.k8s:
+        state: absent
+        kind: Service
+        namespace: "{{ ns }}"
+        name: mariadb

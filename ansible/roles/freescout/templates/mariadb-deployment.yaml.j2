@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mariadb
+  namespace: {{ freescout_namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: {{ mariadb_node }}
+      containers:
+        - name: mariadb
+          image: mariadb:10.5
+          ports:
+            - containerPort: {{ mariadb_port }}
+          env:
+            - name: MYSQL_DATABASE
+              value: {{ mariadb_db }}
+            - name: MYSQL_USER
+              value: {{ mariadb_user }}
+            - name: MYSQL_PASSWORD
+              value: {{ mariadb_password }}
+            - name: MYSQL_ROOT_PASSWORD
+              value: {{ mariadb_password }}
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mariadb-data
+      volumes:
+        - name: mariadb-data
+          persistentVolumeClaim:
+            claimName: mariadb-pvc
