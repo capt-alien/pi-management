@@ -15,6 +15,7 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: {{ freescout_node }}
+      restartPolicy: Always
       containers:
         - name: freescout
           image: tiredofit/freescout:latest
@@ -32,6 +33,25 @@ spec:
           volumeMounts:
             - mountPath: /data
               name: freescout-data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ freescout_port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: {{ freescout_port }}
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
         - name: freescout-data
           persistentVolumeClaim:
