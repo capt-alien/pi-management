@@ -16,9 +16,12 @@ spec:
       nodeSelector:
         kubernetes.io/hostname: {{ freescout_node }}
       restartPolicy: Always
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: freescout
-          image: tiredofit/freescout:latest
+          image: ghcr.io/capt-alien/freescout-arm:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ freescout_port }}
           env:
@@ -30,6 +33,8 @@ spec:
               value: {{ mariadb_user }}
             - name: DB_PASS
               value: {{ mariadb_password }}
+            - name: SITE_URL
+              value: http://freescout.{{ freescout_namespace }}.svc.cluster.local
           volumeMounts:
             - mountPath: /data
               name: freescout-data

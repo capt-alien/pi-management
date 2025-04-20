@@ -6,17 +6,14 @@
     state: present
     kubeconfig: /home/alien/.kube/config
 
-- name: Deploy FreeScout PVC
+- name: Deploy PVCs
   kubernetes.core.k8s:
-    resource_definition: "{{ lookup('template', 'freescout-pvc.yaml.j2') }}"
+    resource_definition: "{{ lookup('template', item) }}"
     state: present
     kubeconfig: /home/alien/.kube/config
-
-- name: Deploy MariaDB PVC
-  kubernetes.core.k8s:
-    resource_definition: "{{ lookup('template', 'mariadb-pvc.yaml.j2') }}"
-    state: present
-    kubeconfig: /home/alien/.kube/config
+  loop:
+    - freescout-pvc.yaml.j2
+    - mariadb-pvc.yaml.j2
 
 - name: Deploy MariaDB
   kubernetes.core.k8s:
@@ -29,6 +26,19 @@
     resource_definition: "{{ lookup('template', 'mariadb-service.yaml.j2') }}"
     state: present
     kubeconfig: /home/alien/.kube/config
+
+- name: Wait for MariaDB pod to be ready
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ freescout_namespace }}"
+    label_selectors:
+      - app=mariadb
+    kubeconfig: /home/alien/.kube/config
+  register: mariadb_pods
+  retries: 20
+  delay: 5
+  until: mariadb_pods.resources[0].status.containerStatuses[0].ready == true
 
 - name: Deploy FreeScout
   kubernetes.core.k8s:
