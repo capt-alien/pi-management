@@ -169,3 +169,5 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+group_vars/all.secrets.yml
+ansible/group_vars/all.secrets.yml
