@@ -3,6 +3,8 @@
   gather_facts: false
   vars:
     ns: freescout
+  vars_files:
+  - group_vars/all.secrets.yml
   tasks:
     - name: Delete FreeScout deployment
       kubernetes.core.k8s:

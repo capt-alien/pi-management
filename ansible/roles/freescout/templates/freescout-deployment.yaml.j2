@@ -1,3 +1,4 @@
+# Trigger redeploy - modified manually
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,7 +21,7 @@ spec:
         - name: ghcr-secret
       containers:
         - name: freescout
-          image: ghcr.io/capt-alien/freescout-arm:latest
+          image: ghcr.io/freescout-helpdesk/freescout:latest
           imagePullPolicy: Always
           ports:
             - containerPort: {{ freescout_port }}
@@ -45,18 +46,18 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-          livenessProbe:
-            httpGet:
-              path: /
-              port: {{ freescout_port }}
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /
-              port: {{ freescout_port }}
-            initialDelaySeconds: 10
-            periodSeconds: 5
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: {{ freescout_port }}
+#            initialDelaySeconds: 30
+#            periodSeconds: 10
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: {{ freescout_port }}
+#            initialDelaySeconds: 10
+#            periodSeconds: 5
       volumes:
         - name: freescout-data
           persistentVolumeClaim:

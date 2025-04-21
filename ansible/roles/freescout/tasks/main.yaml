@@ -51,3 +51,4 @@
     resource_definition: "{{ lookup('template', 'freescout-service.yaml.j2') }}"
     state: present
     kubeconfig: /home/alien/.kube/config
+

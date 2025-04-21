@@ -1,6 +1,8 @@
 - name: Restore FreeScout and MariaDB from preserved PVCs
   hosts: localhost
   gather_facts: false
+  vars_files:
+  - group_vars/all.secrets.yml
 
   roles:
     - role: freescout

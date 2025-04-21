@@ -1,7 +1,9 @@
 - name: Deploy FreeScout and MariaDB to K8s
   hosts: localhost
-  gather_facts: false
+  gather_facts: true
   connection: local
+  vars_files:
+  - group_vars/all.secrets.yml
 
   roles:
     - freescout

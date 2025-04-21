@@ -1,6 +1,8 @@
 - name: Nuke FreeScout and MariaDB from orbit
   hosts: localhost
   gather_facts: false
+  vars_files:
+  - group_vars/all.secrets.yml
   tasks:
     - name: Delete namespace (and all contained resources)
       kubernetes.core.k8s:
