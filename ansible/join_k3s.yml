@@ -3,19 +3,34 @@
   become: true
   vars_files:
     - group_vars/all.yml
+    - group_vars/all.secrets.yml
+
   tasks:
     - name: Skip HomeKit Pi (rp4)
       meta: end_host
       when: inventory_hostname == "rp4"
 
-    - name: Install k3s agent
+    - name: Uninstall existing k3s agent if present
       shell: |
-        curl -sfL https://get.k3s.io | K3S_URL=https://{{ master_ip }}:6443 K3S_TOKEN={{ k3s_token }} sh -
+        /usr/local/bin/k3s-agent-uninstall.sh || true
       args:
         executable: /bin/bash
 
-    - name: Confirm node joined
+    - name: Install k3s agent with fresh token
+      shell: |
+        curl -sfL https://get.k3s.io | \
+        K3S_URL=https://{{ master_ip }}:6443 \
+        K3S_TOKEN="{{ k3s_token }}" sh -
+      args:
+        executable: /bin/bash
+
+    - name: Wait for K3s API to be reachable
       wait_for:
         port: 6443
         host: "{{ master_ip }}"
         timeout: 60
+        state: started
+
+    - name: Pause for join delay
+      pause:
+        seconds: 10
