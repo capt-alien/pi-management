@@ -1,10 +1,5 @@
 freescout_namespace: freescout
 freescout_pvc_size: "1Gi"
 mariadb_pvc_size: "1Gi"
-freescout_node: "rp3"
-mariadb_node: "rp3"
-mariadb_user: "freescout"
-mariadb_password: "changeme"
-mariadb_db: "freescout"
 freescout_port: 8080
 mariadb_port: 3306

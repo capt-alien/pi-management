@@ -1,10 +1,19 @@
 - name: Create FreeScout namespace
   kubernetes.core.k8s:
+    resource_definition: "{{ lookup('template', 'freescout-namespace.yaml.j2') }}"
+    state: present
+    kubeconfig: /home/alien/.kube/config
+
+- name: Wait for FreeScout namespace to exist
+  kubernetes.core.k8s_info:
     api_version: v1
     kind: Namespace
     name: "{{ freescout_namespace }}"
-    state: present
     kubeconfig: /home/alien/.kube/config
+  register: ns_check
+  retries: 20
+  delay: 5
+  until: ns_check.resources | length > 0
 
 - name: Deploy PVCs
   kubernetes.core.k8s:
@@ -38,7 +47,11 @@
   register: mariadb_pods
   retries: 20
   delay: 5
-  until: mariadb_pods.resources[0].status.containerStatuses[0].ready == true
+  until: >
+    mariadb_pods.resources | length > 0 and
+    mariadb_pods.resources[0].status is defined and
+    mariadb_pods.resources[0].status.containerStatuses is defined and
+    mariadb_pods.resources[0].status.containerStatuses[0].ready == true
 
 - name: Deploy FreeScout
   kubernetes.core.k8s:
@@ -51,4 +64,3 @@
     resource_definition: "{{ lookup('template', 'freescout-service.yaml.j2') }}"
     state: present
     kubeconfig: /home/alien/.kube/config
-

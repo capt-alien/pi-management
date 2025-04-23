@@ -1,9 +1,10 @@
-# Trigger redeploy - modified manually
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: freescout
-  namespace: {{ freescout_namespace }}
+  namespace: freescout
+  annotations:
+    redeployTimestamp: "{{ lookup('pipe', 'date +%s') }}"
 spec:
   replicas: 1
   selector:
@@ -14,30 +15,33 @@ spec:
       labels:
         app: freescout
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: {{ freescout_node }}
-      restartPolicy: Always
       imagePullSecrets:
         - name: ghcr-secret
+      nodeSelector:
+        kubernetes.io/hostname: ub1
+      terminationGracePeriodSeconds: 30
       containers:
         - name: freescout
-          image: ghcr.io/freescout-helpdesk/freescout:latest
+          image: ghcr.io/capt-alien/freescout-x86:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: {{ freescout_port }}
+            - containerPort: 80
           env:
             - name: DB_HOST
-              value: mariadb.{{ freescout_namespace }}.svc.cluster.local
+              value: mariadb.freescout.svc.cluster.local
             - name: DB_NAME
-              value: {{ mariadb_db }}
+              value: freescout
             - name: DB_USER
-              value: {{ mariadb_user }}
+              value: freescout
             - name: DB_PASS
-              value: {{ mariadb_password }}
+              valueFrom:
+                secretKeyRef:
+                  name: freescout-db-secret
+                  key: password
             - name: SITE_URL
-              value: http://freescout.{{ freescout_namespace }}.svc.cluster.local
+              value: http://freescout.freescout.svc.cluster.local
           volumeMounts:
-            - mountPath: /data
+            - mountPath: /var/www/html/storage
               name: freescout-data
           resources:
             requests:
@@ -46,18 +50,18 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
-#          livenessProbe:
-#            httpGet:
-#              path: /
-#              port: {{ freescout_port }}
-#            initialDelaySeconds: 30
-#            periodSeconds: 10
-#          readinessProbe:
-#            httpGet:
-#              path: /
-#              port: {{ freescout_port }}
-#            initialDelaySeconds: 10
-#            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
         - name: freescout-data
           persistentVolumeClaim:

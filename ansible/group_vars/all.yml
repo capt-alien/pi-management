@@ -1,4 +1,7 @@
-# group_vars/all.yml
+# node selections:
+freescout_node: ub1
+mariadb_node: rp3
+
 
 # SSH settings
 ansible_user: ansible
@@ -8,4 +11,12 @@ ansible_become_method: sudo
 
 # Kubernetes master details
 master_ip: 192.168.86.74
-k3s_token: "K10876abc140a77da43069d5545cc2bfcf5981e12b1edf88ff497b718cd83eb25a8::server:656f95fd33b3193efe3e2771692eeb1b"
+
+
+# FreeScout Deployment Config
+freescout_namespace: freescout
+freescout_port: 80
+
+# MariaDB Credentials
+mariadb_db: freescout
+mariadb_port: 3306
