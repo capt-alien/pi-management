@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: freescout
-  namespace: freescout
+  namespace: {{ freescout_namespace }}
   annotations:
     redeployTimestamp: "{{ lookup('pipe', 'date +%s') }}"
 spec:
@@ -18,30 +18,34 @@ spec:
       imagePullSecrets:
         - name: ghcr-secret
       nodeSelector:
-        kubernetes.io/hostname: ub1
+        kubernetes.io/hostname: {{ freescout_node }}
       terminationGracePeriodSeconds: 30
+      restartPolicy: Always
       containers:
         - name: freescout
           image: ghcr.io/capt-alien/freescout-x86:latest
           imagePullPolicy: Always
           ports:
-            - containerPort: 80
+            - containerPort: {{ freescout_port }}
           env:
             - name: DB_HOST
-              value: mariadb.freescout.svc.cluster.local
+              value: mariadb.{{ freescout_namespace }}.svc.cluster.local
             - name: DB_NAME
-              value: freescout
+              value: {{ mariadb_db }}
             - name: DB_USER
-              value: freescout
+              valueFrom:
+                secretKeyRef:
+                  name: freescout-db-secret
+                  key: DB_USER
             - name: DB_PASS
               valueFrom:
                 secretKeyRef:
                   name: freescout-db-secret
-                  key: password
+                  key: DB_PASS
             - name: SITE_URL
-              value: http://freescout.freescout.svc.cluster.local
+              value: http://freescout.{{ freescout_namespace }}.svc.cluster.local
           volumeMounts:
-            - mountPath: /var/www/html/storage
+            - mountPath: /data
               name: freescout-data
           resources:
             requests:
@@ -53,13 +57,13 @@ spec:
           livenessProbe:
             httpGet:
               path: /
-              port: 80
+              port: {{ freescout_port }}
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /
-              port: 80
+              port: {{ freescout_port }}
             initialDelaySeconds: 10
             periodSeconds: 5
       volumes:

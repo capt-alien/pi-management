@@ -1,0 +1,12 @@
+---
+- name: Deploy Focalboard
+  hosts: localhost
+  gather_facts: no
+  become: yes
+  vars:
+    kubeconfig: /home/alien/.kube/config
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    - name: Include focalboard role
+      include_role:
+        name: focalboard

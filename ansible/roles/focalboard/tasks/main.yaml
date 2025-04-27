@@ -1,0 +1,18 @@
+---
+- name: Deploy Focalboard PVC
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'focalboard-pvc.yaml.j2') }}"
+    kubeconfig: "{{ kubeconfig }}"
+
+- name: Deploy Focalboard Deployment
+  kubernetes.core.k8s:
+    kubeconfig: /home/alien/.kube/config
+    state: present
+    definition: "{{ lookup('template', 'focalboard-deployment.yaml.j2') }}"
+
+- name: Deploy Focalboard Service
+  kubernetes.core.k8s:
+    kubeconfig: /home/alien/.kube/config
+    state: present
+    definition: "{{ lookup('template', 'focalboard-service.yaml.j2') }}"
