@@ -1,0 +1,25 @@
+- name: Ensure vikunja namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    api_version: v1
+    kind: Namespace
+    name: "{{ namespace }}"
+    state: present
+
+- name: Create PVC for Vikunja SQLite storage
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition: "{{ lookup('template', 'vikunja-pvc.yaml.j2') }}"
+
+- name: Deploy Vikunja (API + Frontend)
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition: "{{ lookup('template', 'vikunja-deployment.yaml.j2') }}"
+
+- name: Expose Vikunja services (NodePort)
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition: "{{ lookup('template', 'vikunja-service.yaml.j2') }}"

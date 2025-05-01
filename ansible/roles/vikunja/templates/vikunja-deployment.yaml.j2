@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vikunja
+  namespace: {{ namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vikunja
+  template:
+    metadata:
+      labels:
+        app: vikunja
+    spec:
+      containers:
+      - name: vikunja-api
+        image: vikunja/api:0.21.0
+        ports:
+        - containerPort: 3456
+        volumeMounts:
+        - name: vikunja-files
+          mountPath: /app/vikunja/files
+      - name: vikunja-frontend
+        image: vikunja/frontend:0.21.0
+        ports:
+        - containerPort: 80
+      volumes:
+      - name: vikunja-files
+        persistentVolumeClaim:
+          claimName: vikunja-files

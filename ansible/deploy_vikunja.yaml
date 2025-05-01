@@ -1,0 +1,8 @@
+- name: Deploy Vikunja to K8s via Ansible
+  hosts: localhost
+  gather_facts: false
+  vars:
+    kubeconfig_path: "/home/alien/.kube/config"
+    namespace: "vikunja"
+  roles:
+    - vikunja

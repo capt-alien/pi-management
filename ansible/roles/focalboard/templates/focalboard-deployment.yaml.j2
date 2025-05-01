@@ -13,6 +13,8 @@ spec:
       labels:
         app: focalboard
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ub1
       containers:
       - name: focalboard
         image: mattermost/focalboard:7.10.2
@@ -21,9 +23,11 @@ spec:
         env:
         - name: FOCALBOARD_PORT
           value: "8000"
+        - name: SERVER_ROOT
+          value: "http://0.0.0.0:8000"
         volumeMounts:
-        - mountPath: /opt/focalboard/data
-          name: focalboard-data
+        - name: focalboard-data
+          mountPath: /opt/focalboard/data
       volumes:
       - name: focalboard-data
         persistentVolumeClaim:

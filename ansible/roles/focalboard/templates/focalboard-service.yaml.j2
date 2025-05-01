@@ -5,10 +5,9 @@ metadata:
   namespace: focalboard
 spec:
   type: NodePort
-  selector:
-    app: focalboard
   ports:
     - port: 8000
       targetPort: 8000
       nodePort: 32151
-      protocol: TCP
+  selector:
+    app: focalboard
