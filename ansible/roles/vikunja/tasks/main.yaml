@@ -6,11 +6,28 @@
     name: "{{ namespace }}"
     state: present
 
-- name: Create PVC for Vikunja SQLite storage
+- name: Check if PVC already exists
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ kubeconfig_path }}"
+    api_version: v1
+    kind: PersistentVolumeClaim
+    namespace: "{{ namespace }}"
+    name: vikunja-files
+  register: pvc_info
+  failed_when: false
+  changed_when: false
+
+- name: Create PVC for Vikunja SQLite storage (only if missing)
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
     definition: "{{ lookup('template', 'vikunja-pvc.yaml.j2') }}"
+  when: pvc_info.resources | length == 0
+
+- name: Skip PVC creation if it already exists
+  debug:
+    msg: "PVC 'vikunja-files' already exists. Skipping creation."
+  when: pvc_info.resources | length > 0
 
 - name: Deploy Vikunja (API + Frontend)
   kubernetes.core.k8s:

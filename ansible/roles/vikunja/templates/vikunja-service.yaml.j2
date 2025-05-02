@@ -8,11 +8,11 @@ spec:
     app: vikunja
   type: NodePort
   ports:
-  - name: api
-    port: 3456
-    targetPort: 3456
-    nodePort: 31356
-  - name: frontend
-    port: 80
-    targetPort: 80
-    nodePort: 30080
+    - name: api
+      port: 3456
+      targetPort: 3456
+      nodePort: 31356
+    - name: frontend
+      port: 80
+      targetPort: 80
+      nodePort: 30088
