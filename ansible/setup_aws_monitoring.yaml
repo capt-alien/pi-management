@@ -1,0 +1,111 @@
+---
+- name: Set up log forwarding and metrics collection on AWS nodes
+  hosts: aws_nodes
+  become: true
+
+  vars:
+    tailscale_host_ub1: "{{ hostvars['ub1']['tailscale_ip'] | default('100.79.164.76') }}"
+    tailscale_ip: "{{ hostvars[inventory_hostname]['tailscale_ip'] | default('') }}"
+
+  tasks:
+    - name: Install rsyslog
+      apt:
+        name: rsyslog
+        state: present
+        update_cache: yes
+
+    - name: Install curl (needed for Tailscale install script)
+      apt:
+        name: curl
+        state: present
+
+    - name: Install Tailscale via official script
+      shell: |
+        curl -fsSL https://tailscale.com/install.sh | sh
+      args:
+        creates: /usr/sbin/tailscaled
+
+    - name: Enable and start tailscaled service
+      systemd:
+        name: tailscaled
+        enabled: true
+        state: started
+
+    - name: Reminder to manually authenticate Tailscale
+      debug:
+        msg: "Run 'sudo tailscale up' on {{ inventory_hostname }} to complete authentication."
+
+    - name: Ensure ub1's Tailscale IP is in /etc/hosts
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ tailscale_host_ub1 }} ub1"
+        state: present
+
+    - name: Configure rsyslog to forward logs to ub1 over VPN
+      copy:
+        dest: /etc/rsyslog.d/60-forward-to-ub1.conf
+        content: "*.* @{{ tailscale_host_ub1 }}:514\n"
+
+    - name: Restart and enable rsyslog
+      systemd:
+        name: rsyslog
+        state: restarted
+        enabled: yes
+
+    - name: Download node exporter binary
+      get_url:
+        url: https://github.com/prometheus/node_exporter/releases/download/v1.8.1/node_exporter-1.8.1.linux-amd64.tar.gz
+        dest: /tmp/node_exporter.tar.gz
+
+    - name: Extract node exporter
+      unarchive:
+        src: /tmp/node_exporter.tar.gz
+        dest: /opt/
+        remote_src: yes
+
+    - name: Create symlink for node_exporter binary
+      file:
+        src: /opt/node_exporter-1.8.1.linux-amd64/node_exporter
+        dest: /usr/local/bin/node_exporter
+        state: link
+
+    - name: Create node_exporter systemd service
+      copy:
+        dest: /etc/systemd/system/node_exporter.service
+        content: |
+          [Unit]
+          Description=Node Exporter
+          After=network.target
+
+          [Service]
+          ExecStart=/usr/local/bin/node_exporter
+          User=nobody
+          Restart=always
+
+          [Install]
+          WantedBy=default.target
+
+    - name: Start and enable node_exporter
+      systemd:
+        name: node_exporter
+        state: started
+        enabled: yes
+
+    - name: Add node to Prometheus aws_nodes scrape config
+      blockinfile:
+        path: /etc/prometheus/prometheus.yml
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - {{ inventory_hostname }} node_exporter"
+        block: |
+          - job_name: 'aws_nodes'
+            static_configs:
+              - targets:
+                  - '{{ tailscale_ip }}:9100'
+                labels:
+                  instance: '{{ inventory_hostname }}'
+      when: inventory_hostname == "ub1"
+
+    - name: Restart Prometheus to apply new config
+      systemd:
+        name: prometheus
+        state: restarted
+      when: inventory_hostname == "ub1"

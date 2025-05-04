@@ -29,6 +29,26 @@
     msg: "PVC 'vikunja-files' already exists. Skipping creation."
   when: pvc_info.resources | length > 0
 
+- name: Create backup script for PVC data
+  ansible.builtin.copy:
+    dest: /usr/local/bin/backup_vikunja_pvc.sh
+    mode: '0755'
+    owner: root
+    group: root
+    content: |
+      #!/bin/bash
+      timestamp=$(date +\%F_\%H-\%M-\%S)
+      backup_dir="/mnt/ssd1/vikunja_backups"
+      mkdir -p "$backup_dir"
+      tar -czf "$backup_dir/vikunja_backup_$timestamp.tar.gz" /var/lib/kubelet/pods/*/volumes/kubernetes.io~local-volume/pvc-*/files
+
+- name: Ensure daily cron job exists for PVC backups
+  ansible.builtin.cron:
+    name: "Backup Vikunja PVC daily"
+    minute: "0"
+    hour: "2"
+    job: "/usr/local/bin/backup_vikunja_pvc.sh"
+
 - name: Deploy Vikunja (API + Frontend)
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"

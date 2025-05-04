@@ -1,0 +1,73 @@
+---
+- name: Migrate Vikunja PVC to SSD and Expand Capacity
+  hosts: localhost
+  become: true
+  vars:
+    ssd_mount_point: "/mnt/ssd1"
+    ssd_device: "/dev/sda"
+    pvc_data_dir: "/var/lib/rancher/k3s/storage"
+    backup_dir: "/mnt/ssd1/vikunja_backup"
+    new_pvc_size: "5Gi"
+    kubeconfig_path: "~/.kube/config"
+    namespace: "vikunja"
+
+  tasks:
+    - name: Ensure /mnt/ssd1 directory exists
+      file:
+        path: "{{ ssd_mount_point }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Add SSD to /etc/fstab if not present
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ ssd_device }} {{ ssd_mount_point }} ext4 defaults 0 2"
+        state: present
+        create: yes
+        regexp: "^{{ ssd_device }}\\s+{{ ssd_mount_point }}\\s+ext4"
+
+    - name: Mount SSD if not already mounted
+      command: mount {{ ssd_mount_point }}
+      args:
+        creates: "{{ ssd_mount_point }}/lost+found"
+
+    - name: Find existing PVC volume directory
+      find:
+        paths: "{{ pvc_data_dir }}"
+        patterns: "*vikunja-files*"
+        file_type: directory
+      register: pvc_dirs
+
+    - name: Backup PVC data to SSD
+      synchronize:
+        src: "{{ item.path }}/"
+        dest: "{{ backup_dir }}/"
+        recursive: true
+      loop: "{{ pvc_dirs.files }}"
+      when: pvc_dirs.matched > 0
+      tags:
+        - backup
+
+    - name: Patch PVC size to {{ new_pvc_size }}
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        kind: PersistentVolumeClaim
+        namespace: "{{ namespace }}"
+        name: vikunja-files
+        definition:
+          spec:
+            resources:
+              requests:
+                storage: "{{ new_pvc_size }}"
+        state: patched
+
+    - name: Create daily cron job to back up PVC
+      cron:
+        name: "Daily Vikunja PVC backup"
+        minute: "0"
+        hour: "3"
+        job: "rsync -a {{ pvc_dirs.files[0].path }}/ {{ backup_dir }}/"
+        user: root
+      when: pvc_dirs.matched > 0
