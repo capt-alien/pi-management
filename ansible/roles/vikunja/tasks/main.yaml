@@ -60,3 +60,9 @@
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
     definition: "{{ lookup('template', 'vikunja-service.yaml.j2') }}"
+
+- name: Deploy ClusterIP service for Prometheus exporter
+  kubernetes.core.k8s:
+    state: present
+    kubeconfig: /home/alien/.kube/config
+    definition: "{{ lookup('template', 'vikunja-exporter-service.yaml.j2') }}"

@@ -30,7 +30,27 @@ spec:
             - name: VIKUNJA_API_URL
               value: "https://tasknet.botcher.io/api/v1"
 
+        - name: easy-prom-exporter
+          image: ghcr.io/capt-alien/easy-prom-exporter:latest
+          ports:
+            - containerPort: 2112
+          env:
+            - name: EXPORTER_PATH
+              value: /mnt/ssd1
+          volumeMounts:
+            - name: ssd1-mount
+              mountPath: /mnt/ssd1
+              readOnly: true
+
+      imagePullSecrets:
+        - name: ghcr-login
+
       volumes:
         - name: vikunja-files
           persistentVolumeClaim:
             claimName: vikunja-files
+
+        - name: ssd1-mount
+          hostPath:
+            path: /mnt/ssd1
+            type: Directory
